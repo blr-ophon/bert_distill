@@ -57,8 +57,6 @@ def run():
         id2label=id2label, label2id=label2id
     ))
 
-    print("DU OSTE OWA GURA")
-
 
     batch_size = 48
     output_dir = "distilbert-base-uncased-finetuned-clinc"
