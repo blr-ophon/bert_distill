@@ -2,6 +2,8 @@ import pprint
 import pandas as pd
 import matplotlib.pyplot as plt
 import torch
+from torch import nn
+from torch.quantization import quantize_dynamic
 from transformers import pipeline, AutoModelForSequenceClassification, AutoTokenizer
 from datasets import load_dataset
 from benchmark import PerformanceBenchmark
@@ -34,6 +36,12 @@ def plot_metrics(perf_metrics, current_optim_type):
     plt.show()
 
 
+def quantize_model(model):
+    # Apply dynamic quantization to the model (only quantizing nn.Linear layers)
+    quantized_model = quantize_dynamic(model, {nn.Linear}, dtype=torch.qint8)
+    return quantized_model
+
+
 def main():
     clinc_ds = load_dataset("clinc_oos", "plus")
     perf_metrics = {}
@@ -47,18 +55,28 @@ def main():
     bert_pipe.model.to("cpu")     # Free space from VRAM
 
     # Distilled BERT
-    model_dir = "./distilbert-base-uncased-finetuned-clinc/checkpoint-1590"
-    tokenizer_dir = model_dir
-    model = AutoModelForSequenceClassification.from_pretrained(model_dir)
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir)
+    distilbert_ckpt = "./distilbert-base-uncased-finetuned-clinc/checkpoint-1590"
+    model = AutoModelForSequenceClassification.from_pretrained(distilbert_ckpt)
+    tokenizer = AutoTokenizer.from_pretrained(distilbert_ckpt)
     distilbert_pipe = pipeline("text-classification", model=model,
                                tokenizer=tokenizer,
                                device=0 if device == "cuda:0" else -1)
-
     pb = PerformanceBenchmark(distilbert_pipe, clinc_ds["test"], optim_type="DistilBERT")
     perf_metrics.update(pb.run_benchmark())
-    pprint.pprint(perf_metrics)
+    distilbert_pipe.model.to("cpu")
 
+    # Quantized DistilBERT
+    q8_distilbert = quantize_model(model)  # Pass the model directly, not the pipeline
+    q8_distilbert_pipe = pipeline("text-classification", model=q8_distilbert,
+                                  tokenizer=tokenizer, device=-1)
+
+    # Benchmark the quantized model
+    pb = PerformanceBenchmark(q8_distilbert_pipe, clinc_ds["test"], optim_type="Quant-DistilBERT")
+    perf_metrics.update(pb.run_benchmark())
+    q8_distilbert.to("cpu")  # Move quantized model to CPU to free up GPU memory if using CUDA
+
+
+    pprint.pprint(perf_metrics)
     plot_metrics(perf_metrics, current_optim_type="DistilBERT")
 
 
