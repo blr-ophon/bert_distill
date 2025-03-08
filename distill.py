@@ -34,7 +34,7 @@ def student_init(model, config):
             model, config=config).to(device))
 
 
-def run():
+def distill():
     teacher_ckpt = "transformersbook/bert-base-uncased-finetuned-clinc"
     # teacher_ckpt = "textattack/bert-base-uncased-imdb"
     student_ckpt = "distilbert-base-uncased"
@@ -84,4 +84,4 @@ def run():
 
 
 if __name__ == """__main__""":
-    run()
+    distill()

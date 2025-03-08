@@ -70,13 +70,7 @@ def main():
     pipe = pipeline("text-classification",
                     model=bert_ckpt, device=0 if device == "cuda:0" else -1)
 
-    # Dataset
     clinc_ds = load_dataset("clinc_oos", "plus")
-    # sample = clinc_ds["test"][42]
-    # print(sample)
-    # intents = clinc_ds["test"].features["intent"]
-    # print(intents.int2str(sample["intent"]))
-
     benchmark = PerformanceBenchmark(pipe, clinc_ds["test"])
     pprint.pprint(benchmark.run_benchmark())
 
