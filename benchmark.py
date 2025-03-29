@@ -1,4 +1,5 @@
 # Standard lib imports
+import random
 import pprint
 from pathlib import Path
 from time import perf_counter
@@ -38,12 +39,20 @@ class PerformanceBenchmark:
         print(f"Model size (MB) - {size_mb:.2f}")
         return {"size_mb": size_mb}
 
-    def compute_latency(self, query):
+    def compute_latency(self):
         latencies = []
 
         for _ in range(10):
+            # Get random sample
+            sample = self.dataset[random.randint(0, len(self.dataset) - 1)]
+            query = sample["text"]
+
             _ = self.pipeline(query)
         for _ in range(100):
+            # Get random sample
+            sample = self.dataset[random.randint(0, len(self.dataset) - 1)]
+            query = sample["text"]
+
             start_time = perf_counter()
             _ = self.pipeline(query)
             latency = perf_counter() - start_time
@@ -59,8 +68,7 @@ class PerformanceBenchmark:
         metrics[self.optim_type] = {}
         metrics[self.optim_type].update(self.compute_size())
         metrics[self.optim_type].update(self.compute_accuracy())
-        query = """hey, i'd like to rent a vehicle from Nov 'st to Nov 15th in Paris and I need a 15 passenger van"""
-        metrics[self.optim_type].update(self.compute_latency(query))
+        metrics[self.optim_type].update(self.compute_latency())
         return metrics
 
 
