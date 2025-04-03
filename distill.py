@@ -5,7 +5,7 @@ from transformers import pipeline
 from transformers import AutoModelForSequenceClassification
 from datasets import load_dataset
 from evaluate import load
-from trainer import TrainingArgumentsDistill, TrainerDistill
+from trainer_distill import TrainingArgumentsDistill, TrainerDistill
 
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
